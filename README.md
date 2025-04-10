@@ -48,17 +48,21 @@ Example Playbook
 - name: Install and configure VeilTransfer server
   hosts: servers
   become: true
-  vars:
-    veiltransfer_user: "veiluser"  # Ensure this user is provided
   roles:
     - role: veiltransfer
+      vars:
+        veiltransfer_user: "veiluser"
+
+```
 
 License
 -------
 
-
+GPL-3.0
 
 Author Information
 ------------------
+
+Thorina Boenke (https://www.ait.ac.at)
 
 
