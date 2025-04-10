@@ -23,10 +23,6 @@ Role Variables
 - **`veiltransfer_user`** *(Required)*  
   The user who will install and run the VeilTransfer server. This user **must be supplied** when calling the role.
 
-- **`generate_certificates`** *(Optional)*  
-  Whether to automatically generate SSL/TLS certificates (self-signed) for the server. If set to `true`, it will create `server.key`, `server.csr`, and `server.crt` in the home directory of the `veiltransfer_user`.  
-  Default: `true`.
-
 - **`go_version`** *(Optional)*  
   The version of Go to install. Default is `1.22.12`. Only used if Go is not installed or is outdated.
 
