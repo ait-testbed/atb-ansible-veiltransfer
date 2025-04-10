@@ -1,31 +1,61 @@
 Role Name
 =========
 
-This roles installs veiltransfer server. https://github.com/infosecn1nja/VeilTransfer
+This role installs the **VeilTransfer server**. For more information, visit the [VeilTransfer GitHub repository](https://github.com/infosecn1nja/VeilTransfer). It includes:
+
+- Installation of **Go 1.22.12** (if necessary).
+- Creation of a **Systemd service** to run the VeilTransfer server using the **QUIC protocol**.
+- Automatic certificate generation for secure communication.
 
 Requirements
 ------------
 
-Ubuntu and Go version > 1.22.12
+This role requires:
+
+- **Ubuntu** (other Linux distros might work but are not officially supported).
+- **Go** version **>= 1.22.12**.
+
+If Go is not installed or is outdated, this role will install or update it to the required version.
 
 Role Variables
 --------------
 
-veiltransfer_user
-generate_certificates
+- **`veiltransfer_user`** *(Required)*  
+  The user who will install and run the VeilTransfer server. This user **must be supplied** when calling the role.
+
+- **`generate_certificates`** *(Optional)*  
+  Whether to automatically generate SSL/TLS certificates (self-signed) for the server. If set to `true`, it will create `server.key`, `server.csr`, and `server.crt` in the home directory of the `veiltransfer_user`.  
+  Default: `true`.
+
+- **`go_version`** *(Optional)*  
+  The version of Go to install. Default is `1.22.12`. Only used if Go is not installed or is outdated.
+
+- **`veiltransfer_repo`** *(Optional)*  
+  The URL of the VeilTransfer GitHub repository. Default is `https://github.com/infosecn1nja/VeilTransfer.git`.
+
+- **`veiltransfer_folder_path`** *(Optional)*  
+  The folder path for the data transferred by the VeilTransfer server. Default is `/home/{{ veiltransfer_user }}/stolen_data.tar.gz`.
+
 
 Dependencies
 ------------
+
+- **Go 1.22.12** or higher to compile VeilTransfer.
+- **Systemd** to create a service for the VeilTransfer server.
 
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```yaml
+---
+- name: Install and configure VeilTransfer server
+  hosts: servers
+  become: true
+  vars:
+    veiltransfer_user: "veiluser"  # Ensure this user is provided
+  roles:
+    - role: veiltransfer
 
 License
 -------
