@@ -1,128 +1,133 @@
-- name: Install veiltransfer server on  Attacker Host
+- name: Set permanent network buffer sizes in sysctl
   become: true
-  vars:
-    veiltransfer_user: "{{ veiltransfer_user }}"
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-buffer-sizes.conf
+    content: |
+      net.core.rmem_max=7500000
+      net.core.wmem_max=7500000
+    owner: root
+    group: root
+    mode: '0644'
 
-  tasks:
-    - name: Set permanent network buffer sizes in sysctl
-      ansible.builtin.copy:
-        dest: /etc/sysctl.d/99-buffer-sizes.conf
-        content: |
-          net.core.rmem_max=7500000
-          net.core.wmem_max=7500000
-        owner: root
-        group: root
-        mode: '0644'
+- name: Reload sysctl settings
+  become: true
+  ansible.builtin.command: sysctl --system
+  changed_when: true
 
-    - name: Reload sysctl settings
-      ansible.builtin.command: sysctl --system
-      changed_when: true
+- name: Ensure required Go version is installed
+  become: true
+  ansible.builtin.include_tasks: setup_go.yaml
 
-    - name: Ensure required Go version is installed
-      ansible.builtin.include_tasks: setup_go.yaml
+- name: Clone the VeilTransfer repository
+  become: true
+  become_user: "{{ veiltransfer_user }}"
+  ansible.builtin.git:
+    repo: "{{ veiltransfer_repo }}"
+    dest: "/home/{{ veiltransfer_user }}/VeilTransfer"
+    version: main
+    update: yes
 
-    - name: Clone the VeilTransfer repository
-      become_user: "{{ veiltransfer_user }}"
-      ansible.builtin.git:
-        repo: "{{ veiltransfer_repo}}"
-        dest: /home/{{ veiltransfer_user }}/VeilTransfer
-        version: main
-        update: yes
+- name: Run make server-linux
+  become: true
+  become_user: "{{ veiltransfer_user }}"
+  ansible.builtin.command:
+    cmd: make server-linux
+    chdir: "/home/{{ veiltransfer_user }}/VeilTransfer"
+  environment:
+    PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
 
-    - name: Run make server-linux
-      become_user: "{{ veiltransfer_user }}"
-      ansible.builtin.command:
-        cmd: make server-linux
-        chdir: /home/{{ veiltransfer_user }}/VeilTransfer
-      environment:
-        PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
+- name: Run make client-linux
+  become: true
+  become_user: "{{ veiltransfer_user }}"
+  ansible.builtin.command:
+    cmd: make client-linux
+    chdir: "/home/{{ veiltransfer_user }}/VeilTransfer"
+  environment:
+    PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
 
-    - name: Run make client-linux
-      become_user: "{{ veiltransfer_user }}"
-      ansible.builtin.command:
-        cmd: make client-linux
-        chdir: /home/{{ veiltransfer_user }}/VeilTransfer
-      environment:
-        PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
+- name: Make the built client binary executable
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ veiltransfer_user }}/VeilTransfer/{{ client_binary_name }}"
+    mode: '0755'
 
-    - name: Make the built client binary executable
-      ansible.builtin.file:
-        path: /home/{{ veiltransfer_user }}/VeilTransfer/{{ client_binary_name }}
-        mode: '0755'
+- name: Make the built server binary executable
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ veiltransfer_user }}/VeilTransfer/{{ server_binary_name }}"
+    mode: '0755'
 
-    - name: Make the built server binary executable
-      ansible.builtin.file:
-        path: /home/{{ veiltransfer_user }}/VeilTransfer/{{ server_binary_name }}
-        mode: '0755'
+- name: Generate server private key and CSR
+  become: true
+  become_user: "{{ veiltransfer_user }}"
+  ansible.builtin.command:
+    cmd: openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "/CN=veiltransfer"
+    chdir: "/home/{{ veiltransfer_user }}"
+  creates: "/home/{{ veiltransfer_user }}/server.key"
 
-    - name: Generate server private key and CSR
-      become: true
-      become_user: "{{ veiltransfer_user }}"
-      ansible.builtin.command:
-        cmd: openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "/CN=veiltransfer"
-        chdir: /home/{{ veiltransfer_user }}
-      creates: /home/{{ veiltransfer_user }}/server.key
+- name: Generate self-signed certificate from CSR
+  become: true
+  become_user: "{{ veiltransfer_user }}"
+  ansible.builtin.command:
+    cmd: openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+    chdir: "/home/{{ veiltransfer_user }}"
+  creates: "/home/{{ veiltransfer_user }}/server.crt"
 
-    - name: Generate self-signed certificate from CSR
-      become: true
-      become_user: "{{ veiltransfer_user }}"
-      ansible.builtin.command:
-        cmd: openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-        chdir: /home/{{ veiltransfer_user }}
-      creates: /home/{{ veiltransfer_user }}/server.crt
+- name: Restrict permissions on server.key
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ veiltransfer_user }}/server.key"
+    mode: '0600'
+    owner: "{{ veiltransfer_user }}"
+    group: "{{ veiltransfer_user }}"
 
-    - name: Restrict permissions on server.key
-      ansible.builtin.file:
-        path: /home/{{ veiltransfer_user }}/server.key
-        mode: '0600'
-        owner: "{{ veiltransfer_user }}"
-        group: "{{ veiltransfer_user }}"
+- name: Move built binaries to system bin directory
+  become: true
+  ansible.builtin.copy:
+    remote_src: yes
+    src: "/home/{{ veiltransfer_user }}/VeilTransfer/{{ item }}"
+    dest: "/usr/bin/{{ item }}"
+    mode: '0755'
+  loop:
+    - "{{ server_binary_name }}"
+    - "{{ client_binary_name }}"
 
-    - name: Move built binaries to system bin directory
-      become: true
-      become_user: root
-      ansible.builtin.copy:
-        remote_src: yes
-        src: "/home/{{ veiltransfer_user }}/VeilTransfer/{{ item }}"
-        dest: "/usr/bin/{{ item }}"
-        mode: '0755'
-      loop:
-        - "{{ server_binary_name }}"
-        - "{{ client_binary_name }}"
+- name: Create systemd service for veiltransfer server
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/veiltransfer.service
+    content: |
+      [Unit]
+      Description=VeilTransfer QUIC Server
+      After=network.target
 
-    - name: Create systemd service for veiltransfer server
-      ansible.builtin.copy:
-        dest: /etc/systemd/system/veiltransfer.service
-        content: |
-          [Unit]
-          Description=VeilTransfer QUIC Server
-          After=network.target
+      [Service]
+      ExecStart=/usr/bin/veiltransfer_server_linux quic -cert /home/{{ veiltransfer_user }}/server.crt -key /home/{{ veiltransfer_user }}/server.key -folder {{ veiltransfer_folder_path }}
+      WorkingDirectory=/home/{{ veiltransfer_user }}
+      Restart=on-failure
+      User=root
 
-          [Service]
-          ExecStart=/usr/bin/veiltransfer_server_linux quic -cert /home/{{ veiltransfer_user }}/server.crt -key /home/{{ veiltransfer_user }}/server.key -folder {{ veiltransfer_folder_path }}
-          WorkingDirectory=/home/{{ veiltransfer_user }}
-          Restart=on-failure
-          User=root
+      [Install]
+      WantedBy=multi-user.target
+    owner: root
+    group: root
+    mode: '0644'
 
-          [Install]
-          WantedBy=multi-user.target
-        owner: root
-        group: root
-        mode: '0644'
+- name: Reload systemd daemon
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
 
-    - name: Reload systemd daemon
-      ansible.builtin.systemd:
-        daemon_reload: yes
+- name: Enable and start veiltransfer service
+  become: true
+  ansible.builtin.systemd:
+    name: veiltransfer
+    enabled: true
+    state: started
 
-    - name: Enable and start veiltransfer service
-      ansible.builtin.systemd:
-        name: veiltransfer
-        enabled: true
-        state: started
-
-    - name: Verify veiltransfer service status
-      ansible.builtin.command: systemctl is-active veiltransfer
-      register: veiltransfer_status
-      changed_when: false
-      failed_when: veiltransfer_status.stdout != "active"
-
+- name: Verify veiltransfer service status
+  become: true
+  ansible.builtin.command: systemctl is-active veiltransfer
+  register: veiltransfer_status
+  changed_when: false
+  failed_when: veiltransfer_status.stdout != "active"
