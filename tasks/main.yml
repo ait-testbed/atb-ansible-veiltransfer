@@ -62,7 +62,7 @@
   ansible.builtin.command:
     cmd: openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "/CN=veiltransfer"
     chdir: "/home/{{ veiltransfer_user }}"
-  creates: "/home/{{ veiltransfer_user }}/server.key"
+
 
 - name: Generate self-signed certificate from CSR
   become: true
@@ -70,7 +70,7 @@
   ansible.builtin.command:
     cmd: openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
     chdir: "/home/{{ veiltransfer_user }}"
-  creates: "/home/{{ veiltransfer_user }}/server.crt"
+
 
 - name: Restrict permissions on server.key
   become: true
