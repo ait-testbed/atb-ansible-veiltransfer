@@ -15,7 +15,6 @@
   changed_when: true
 
 - name: Ensure required Go version is installed
-  become: true
   ansible.builtin.include_tasks: setup_go.yaml
 
 - name: Clone the VeilTransfer repository
