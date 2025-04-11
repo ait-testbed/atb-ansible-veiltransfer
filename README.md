@@ -36,7 +36,7 @@ Role Variables
 Dependencies
 ------------
 
-- **Go 1.22.12** or higher to compile VeilTransfer.
+- **Go 1.22.12** or higher to compile VeilTransfer (gets installed if Go is not installed or is outdated )
 - **Systemd** to create a service for the VeilTransfer server.
 
 
