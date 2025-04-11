@@ -101,7 +101,7 @@
       After=network.target
 
       [Service]
-      ExecStart=/usr/bin/veiltransfer_server_linux quic -cert /home/{{ veiltransfer_user }}/server.crt -key /home/{{ veiltransfer_user }}/server.key -folder {{ veiltransfer_folder_path }}
+      ExecStart=/usr/bin/veiltransfer_server_linux quic -cert /home/{{ veiltransfer_user }}/server.crt -key /home/{{ veiltransfer_user }}/server.key -folder /home/{{ veiltransfer_user }}/{{ veiltransfer_received_file }}
       WorkingDirectory=/home/{{ veiltransfer_user }}
       Restart=on-failure
       User=root

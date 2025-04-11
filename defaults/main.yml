@@ -1,2 +1,14 @@
----
-# defaults file for atb-ansible-veiltransfer
+# Go settings
+go_version: "1.22.12"
+go_tarball: "go{{ go_version }}.linux-amd64.tar.gz"
+go_url: "https://go.dev/dl/{{ go_tarball }}"
+
+# Binaries
+server_binary_name: "veiltransfer_server_linux"
+client_binary_name: "veiltransfer_client_linux"
+install_bin_dir: "/usr/local/bin"
+
+# VeilTransfer repo
+veiltransfer_repo: "https://github.com/infosecn1nja/VeilTransfer.git"
+
+veiltransfer_received_file: "stolen_data.tar.gz"
