@@ -1,5 +1,4 @@
-Role Name
-=========
+# Ansible role: VeilTransfer
 
 This role installs the **VeilTransfer server**. For more information, visit the [VeilTransfer GitHub repository](https://github.com/infosecn1nja/VeilTransfer). It includes:
 
@@ -7,8 +6,7 @@ This role installs the **VeilTransfer server**. For more information, visit the 
 - Creation of a **Systemd service** to run the VeilTransfer server using the **QUIC protocol**.
 - Automatic certificate generation for secure communication.
 
-Requirements
-------------
+## Requirements
 
 This role requires:
 
@@ -17,31 +15,23 @@ This role requires:
 
 If Go is not installed or is outdated, this role will install or update it to the required version.
 
-Role Variables
---------------
+## Role Variables
 
-- **`veiltransfer_user`** *(Required)*  
-  The user who will install and run the VeilTransfer server. This user **must be supplied** when calling the role.
-
-- **`go_version`** *(Optional)*  
-  The version of Go to install. Default is `1.22.12`. Only used if Go is not installed or is outdated.
-
-- **`veiltransfer_repo`** *(Optional)*  
-  The URL of the VeilTransfer GitHub repository. Default is `https://github.com/infosecn1nja/VeilTransfer.git`.
-
-- **`veiltransfer_folder_path`** *(Optional)*  
-  The folder path for the data transferred by the VeilTransfer server. Default is `/home/{{ veiltransfer_user }}/stolen_data.tar.gz`.
+| Variable                   | Required | Default                                             | Description                                                                             |
+| -------------------------- | -------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `veiltransfer_user`        | Yes      | `None`                                              | The user who will install and run the VeilTransfer server.                              |
+| `go_version`               | No       | `1.22.12`                                           | The version of Go to install. Only used if Go is not installed or is outdated.          |
+| `veiltransfer_repo`        | No       | `https://github.com/infosecn1nja/VeilTransfer.git`  | The URL of the VeilTransfer GitHub repository to clone.                                 |
+| `veiltransfer_received_file` | No       | `stolen_data.tar.gz` | The destination for received data transfers. |
 
 
-Dependencies
-------------
+## Dependencies
 
 - **Go 1.22.12** or higher to compile VeilTransfer (gets installed if Go is not installed or is outdated )
 - **Systemd** to create a service for the VeilTransfer server.
 
 
-Example Playbook
-----------------
+## Example Playbook
 
 ```yaml
 ---
@@ -55,13 +45,11 @@ Example Playbook
 
 ```
 
-License
--------
+## License
 
 GPL-3.0
 
-Author Information
-------------------
+## Author Information
 
 Thorina Boenke (https://www.ait.ac.at)
 
